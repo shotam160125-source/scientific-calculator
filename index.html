@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HTML関数電卓</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --button: #243047;
+      --button-hover: #334155;
+      --accent: #38bdf8;
+      --accent-2: #22c55e;
+      --danger: #fb7185;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --shadow: rgba(0, 0, 0, 0.28);
+    }
+
+    body.light {
+      --bg: #e5e7eb;
+      --panel: #ffffff;
+      --panel-2: #f1f5f9;
+      --button: #e2e8f0;
+      --button-hover: #cbd5e1;
+      --accent: #0284c7;
+      --accent-2: #16a34a;
+      --danger: #e11d48;
+      --text: #0f172a;
+      --muted: #64748b;
+      --shadow: rgba(15, 23, 42, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, rgba(56, 189, 248, 0.18), transparent 36%), var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(1060px, 100%);
+      display: grid;
+      grid-template-columns: minmax(320px, 460px) minmax(260px, 1fr);
+      gap: 18px;
+    }
+
+    .calculator,
+    .side-panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 24px;
+      box-shadow: 0 22px 70px var(--shadow);
+      overflow: hidden;
+    }
+
+    .calculator {
+      padding: 18px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .display {
+      background: rgba(2, 6, 23, 0.34);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 14px;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    body.light .display {
+      background: rgba(241, 245, 249, 0.84);
+    }
+
+    .expression {
+      min-height: 32px;
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.45;
+      word-break: break-all;
+      text-align: right;
+    }
+
+
+
+
+
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.15em;
+      margin: 0 1px;
+      vertical-align: -0.16em;
+      background: var(--accent);
+      border-radius: 999px;
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      0%, 45% { opacity: 1; }
+      46%, 100% { opacity: 0; }
+    }
+
+    .math-view {
+      display: inline-block;
+      text-align: right;
+      white-space: normal;
+      word-break: normal;
+      overflow-wrap: anywhere;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+
+    .math-view .op-symbol {
+      padding: 0 0.18em;
+    }
+
+    .math-view .group {
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .math-view sup,
+    .math-view sub {
+      font-size: 0.68em;
+      line-height: 0;
+    }
+
+    .math-view .sqrt {
+      display: inline-flex;
+      align-items: flex-start;
+      white-space: nowrap;
+      margin: 0 0.06em;
+    }
+
+    .math-view .sqrt-symbol {
+      font-size: 1.35em;
+      line-height: 1.05;
+      padding-right: 0.03em;
+      transform: translateY(0.03em);
+    }
+
+    .math-view .radicand {
+      display: inline-block;
+      border-top: 2px solid currentColor;
+      padding: 0.02em 0.14em 0 0.12em;
+      line-height: 1.15;
+    }
+
+    .math-view .frac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: stretch;
+      vertical-align: middle;
+      text-align: center;
+      min-width: 1.2em;
+      margin: 0 0.14em;
+    }
+
+    .math-view .frac-num,
+    .math-view .frac-den {
+      display: block;
+      padding: 0 0.22em;
+      line-height: 1.15;
+    }
+
+    .math-view .frac-den {
+      border-top: 2px solid currentColor;
+      margin-top: 0.08em;
+      padding-top: 0.08em;
+    }
+
+    .math-view .func-name {
+      font-style: normal;
+      margin-right: 0.04em;
+    }
+
+    .math-view .fallback-sqrt {
+      font-size: 1.2em;
+    }
+
+    .result {
+      min-height: 46px;
+      color: var(--text);
+      font-size: clamp(28px, 6vw, 44px);
+      line-height: 1.1;
+      font-weight: 700;
+      text-align: right;
+      word-break: break-all;
+    }
+
+
+    .cursor-controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      margin: -2px 0 14px;
+    }
+
+    .cursor-controls button {
+      min-height: 42px;
+      font-size: 18px;
+      border-radius: 12px;
+    }
+
+    .cursor-controls button span {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.1;
+      margin-top: 2px;
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 9px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      min-height: 52px;
+      padding: 10px 8px;
+      background: var(--button);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 650;
+      cursor: pointer;
+      transition: transform 0.05s ease, background 0.16s ease, opacity 0.16s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background: var(--button-hover);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .op {
+      color: var(--accent);
+    }
+
+    .fn {
+      color: #c4b5fd;
+    }
+
+    .util {
+      color: var(--muted);
+    }
+
+    .danger {
+      color: var(--danger);
+    }
+
+    .equal {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      grid-column: span 2;
+    }
+
+    .wide {
+      grid-column: span 2;
+    }
+
+    .side-panel {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section {
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .section h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .help-list {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .history {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .history-item {
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      background: rgba(15, 23, 42, 0.18);
+      border-radius: 12px;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    body.light .history-item {
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .history-expression {
+      color: var(--muted);
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    .history-result {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 3px;
+      word-break: break-all;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .constant-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .constant-grid button {
+      min-height: 58px;
+      padding: 8px 6px;
+      font-size: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      line-height: 1.15;
+    }
+
+    .const-symbol {
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+
+    .const-name {
+      color: var(--muted);
+      font-size: 10.5px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .constant-note {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.94);
+      color: white;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, bottom 0.2s ease;
+      box-shadow: 0 12px 32px var(--shadow);
+      z-index: 10;
+    }
+
+    .toast.show {
+      opacity: 1;
+      bottom: 28px;
+    }
+
+    @media (max-width: 840px) {
+      body {
+        align-items: flex-start;
+        padding: 12px;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .buttons {
+        gap: 7px;
+      }
+
+      button {
+        min-height: 48px;
+        font-size: 15px;
+        border-radius: 12px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .calculator,
+      .side-panel {
+        border-radius: 18px;
+        padding: 12px;
+      }
+
+      .buttons {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .hide-small {
+        display: none;
+      }
+
+      .equal,
+      .wide {
+        grid-column: span 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="calculator" aria-label="関数電卓">
+      <div class="title-row">
+        <h1>HTML関数電卓</h1>
+        <div class="pill-row">
+          <span class="pill" id="angleLabel">DEG</span>
+          <span class="pill" id="memoryLabel">M: 0</span>
+        </div>
+      </div>
+
+      <div class="display" aria-live="polite">
+        <div class="expression" id="expression">0</div>
+        <div class="result" id="result">0</div>
+      </div>
+
+      <div class="cursor-controls" aria-label="入力位置操作">
+        <button class="util" data-cursor-action="start" title="入力位置を先頭へ">↑<span>先頭</span></button>
+        <button class="util" data-cursor-action="left" title="入力位置を左へ">←<span>左へ</span></button>
+        <button class="util" data-cursor-action="right" title="入力位置を右へ">→<span>右へ</span></button>
+        <button class="util" data-cursor-action="end" title="入力位置を末尾へ">↓<span>末尾</span></button>
+      </div>
+
+      <div class="buttons" id="buttons">
+        <button class="danger" data-action="clear">AC</button>
+        <button class="util" data-action="delete">DEL</button>
+        <button class="util" data-value="(">(</button>
+        <button class="util" data-value=")">)</button>
+        <button class="op" data-action="toggleAngle">DEG/RAD</button>
+
+        <button class="fn" data-value="sin(">sin</button>
+        <button class="fn" data-value="cos(">cos</button>
+        <button class="fn" data-value="tan(">tan</button>
+        <button class="fn" data-value="log(">log</button>
+        <button class="fn" data-value="ln(">ln</button>
+
+        <button class="fn" data-action="logbase">logₐ</button>
+        <button class="fn" data-value="sqrt(">√</button>
+        <button class="fn" data-action="square">x²</button>
+        <button class="op" data-value="^">xʸ</button>
+        <button class="fn" data-value="inv(">1/x</button>
+
+        <button class="util" data-action="memoryClear">MC</button>
+        <button class="util" data-action="memoryRecall">MR</button>
+        <button class="util" data-action="memoryAdd">M+</button>
+        <button class="util" data-action="memorySubtract">M-</button>
+        <button class="util" data-value="Ans">Ans</button>
+
+        <button data-value="7">7</button>
+        <button data-value="8">8</button>
+        <button data-value="9">9</button>
+        <button class="op" data-value="÷">÷</button>
+        <button class="util" data-value="π">π</button>
+
+        <button data-value="4">4</button>
+        <button data-value="5">5</button>
+        <button data-value="6">6</button>
+        <button class="op" data-value="×">×</button>
+        <button class="util" data-value="e">e</button>
+
+        <button data-value="1">1</button>
+        <button data-value="2">2</button>
+        <button data-value="3">3</button>
+        <button class="op" data-value="-">−</button>
+        <button class="op" data-value=",">,</button>
+
+        <button data-value="0">0</button>
+        <button data-value=".">.</button>
+        <button class="op" data-value="+">+</button>
+        <button class="equal" data-action="calculate">=</button>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <div class="section">
+        <h2>操作</h2>
+        <div class="mini-grid">
+          <button class="util" data-side-action="copy">結果をコピー</button>
+          <button class="util" data-side-action="theme">テーマ切替</button>
+          <button class="util" data-side-action="clearHistory">履歴削除</button>
+          <button class="util" data-side-action="insertExample">例を入力</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>物理定数</h2>
+        <div class="constant-grid">
+          <button class="util" data-constant="c" title="光速: 299792458 m/s"><span class="const-symbol">c</span><span class="const-name">光速</span></button>
+          <button class="util" data-constant="kB" title="ボルツマン定数: 1.380649e-23 J/K"><span class="const-symbol">kB</span><span class="const-name">ボルツマン定数</span></button>
+          <button class="util" data-constant="h" title="プランク定数: 6.62607015e-34 J s"><span class="const-symbol">h</span><span class="const-name">プランク定数</span></button>
+          <button class="util" data-constant="hbar" title="換算プランク定数: 1.054571817e-34 J s"><span class="const-symbol">ħ</span><span class="const-name">換算プランク</span></button>
+          <button class="util" data-constant="q" title="電気素量: 1.602176634e-19 C"><span class="const-symbol">q</span><span class="const-name">電気素量</span></button>
+          <button class="util" data-constant="NA" title="アボガドロ定数: 6.02214076e23 mol^-1"><span class="const-symbol">NA</span><span class="const-name">アボガドロ定数</span></button>
+          <button class="util" data-constant="R" title="気体定数: 8.31446261815324 J/(mol K)"><span class="const-symbol">R</span><span class="const-name">気体定数</span></button>
+          <button class="util" data-constant="G" title="万有引力定数: 6.67430e-11 m^3 kg^-1 s^-2"><span class="const-symbol">G</span><span class="const-name">万有引力定数</span></button>
+          <button class="util" data-constant="eps0" title="真空の誘電率: 8.8541878128e-12 F/m"><span class="const-symbol">ε0</span><span class="const-name">真空誘電率</span></button>
+          <button class="util" data-constant="mu0" title="真空の透磁率: 1.25663706212e-6 N/A^2"><span class="const-symbol">μ0</span><span class="const-name">真空透磁率</span></button>
+          <button class="util" data-constant="me" title="電子質量: 9.1093837139e-31 kg"><span class="const-symbol">me</span><span class="const-name">電子質量</span></button>
+          <button class="util" data-constant="mp" title="陽子質量: 1.67262192595e-27 kg"><span class="const-symbol">mp</span><span class="const-name">陽子質量</span></button>
+        </div>
+        <div class="constant-note">例：<code>kB*300</code>、<code>h*c</code>、<code>q/eps0</code> のように入力できます。</div>
+      </div>
+
+      <div class="section">
+        <h2>入力例</h2>
+        <ul class="help-list">
+          <li><code>sin(30)</code>：DEG時は 0.5</li>
+          <li><code>log(100)</code>：常用対数</li>
+          <li><code>ln(e)</code>：自然対数</li>
+          <li><code>log(2,8)</code>：底2の対数で 3</li>
+          <li><code>sqrt(16)+3^2</code>：平方根と累乗</li>
+          <li><code>kB*300</code>：ボルツマン定数を使う</li>
+          <li><code>h*c</code>：プランク定数と光速を使う</li>
+          <li>↑/↓/←/→ ボタンで入力位置を移動できます</li>
+          <li>入力式は √ や分数、指数を使って見やすく表示</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>計算履歴</h2>
+        <div class="history" id="history">
+          <div class="empty">まだ履歴はありません。計算するとここに表示されます。</div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast">コピーしました</div>
+
+  <script>
+    (() => {
+      const expressionEl = document.getElementById('expression');
+      const resultEl = document.getElementById('result');
+      const buttonsEl = document.getElementById('buttons');
+      const angleLabel = document.getElementById('angleLabel');
+      const memoryLabel = document.getElementById('memoryLabel');
+      const historyEl = document.getElementById('history');
+      const toastEl = document.getElementById('toast');
+
+      const state = {
+        expression: '',
+        ans: 0,
+        memory: 0,
+        angleMode: 'DEG',
+        history: [],
+        cursor: 0,
+        justCalculated: false
+      };
+
+      const functionNames = new Set(['sin', 'cos', 'tan', 'log', 'ln', 'sqrt', 'inv', 'abs', 'exp']);
+      const physicalConstants = {
+        c: 299792458,                 // speed of light [m/s]
+        kB: 1.380649e-23,             // Boltzmann constant [J/K]
+        kb: 1.380649e-23,             // lowercase alias
+        h: 6.62607015e-34,            // Planck constant [J s]
+        hbar: 6.62607015e-34 / (2 * Math.PI),
+        q: 1.602176634e-19,           // elementary charge [C]
+        NA: 6.02214076e23,            // Avogadro constant [1/mol]
+        R: 8.31446261815324,          // gas constant [J/(mol K)]
+        G: 6.67430e-11,               // gravitational constant [m^3 kg^-1 s^-2]
+        eps0: 8.8541878128e-12,       // vacuum permittivity [F/m]
+        mu0: 1.25663706212e-6,        // vacuum permeability [N/A^2]
+        me: 9.1093837139e-31,         // electron mass [kg]
+        mp: 1.67262192595e-27         // proton mass [kg]
+      };
+      const constantNames = new Set(['π', 'pi', 'e', 'Ans', 'M', ...Object.keys(physicalConstants)]);
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function cursorHtml() {
+        return '<span class="cursor" aria-hidden="true"></span>';
+      }
+
+      function createCursorContext(cursor) {
+        return { cursor, placed: false };
+      }
+
+      function cursorAt(position, ctx) {
+        if (!ctx || ctx.cursor < 0 || ctx.placed) return '';
+        if (position === ctx.cursor) {
+          ctx.placed = true;
+          return cursorHtml();
+        }
+        return '';
+      }
+
+      function renderExpression(input, cursor = -1) {
+        const raw = String(input || '');
+        if (!raw) {
+          return `<span class="math-view"><span style="opacity:.7">0</span></span>`;
+        }
+
+        const ctx = createCursorContext(cursor);
+        try {
+          const tokens = tokenizeVisual(raw);
+          const parser = new VisualParser(tokens);
+          const ast = parser.parse();
+          let html = renderAst(ast, 0, '', ctx);
+          if (!ctx.placed && cursor >= 0) html += cursorHtml();
+          return `<span class="math-view">${html}</span>`;
+        } catch {
+          const fallbackCtx = createCursorContext(cursor);
+          let html = renderSimpleExpression(raw, fallbackCtx);
+          if (!fallbackCtx.placed && cursor >= 0) html += cursorHtml();
+          return `<span class="math-view">${html}</span>`;
+        }
+      }
+
+      function renderSimpleExpression(input, ctx) {
+        const src = String(input);
+        let html = '';
+        let i = 0;
+
+        while (i < src.length) {
+          html += cursorAt(i, ctx);
+
+          if (src.startsWith('sqrt(', i) && !(ctx && ctx.cursor > i && ctx.cursor < i + 5)) {
+            html += '<span class="fallback-sqrt">√</span>(';
+            i += 5;
+            continue;
+          }
+
+          const char = src[i];
+
+          if (char === '*') {
+            html += '×';
+            i += 1;
+            continue;
+          }
+
+          if (char === '/') {
+            html += '÷';
+            i += 1;
+            continue;
+          }
+
+          if (char === '^') {
+            const rest = src.slice(i + 1);
+            const match = rest.match(/^-?\d+(?:\.\d+)?/);
+            const end = match ? i + 1 + match[0].length : i + 1;
+            if (match && !(ctx && ctx.cursor > i && ctx.cursor < end)) {
+              html += `<sup>${escapeHtml(match[0])}</sup>`;
+              i = end;
+            } else {
+              html += '<sup>□</sup>';
+              i += 1;
+            }
+            continue;
+          }
+
+          html += escapeHtml(char);
+          i += 1;
+        }
+
+        html += cursorAt(src.length, ctx);
+        return html;
+      }
+
+      function renderTextWithCursor(text, start, ctx) {
+        let html = '';
+        const value = String(text);
+        for (let i = 0; i < value.length; i += 1) {
+          html += cursorAt(start + i, ctx);
+          html += escapeHtml(value[i]);
+        }
+        html += cursorAt(start + value.length, ctx);
+        return html;
+      }
+
+      function tokenizeVisual(input) {
+        const tokens = [];
+        let i = 0;
+        const src = String(input).replace(/\s+/g, '');
+
+        while (i < src.length) {
+          const char = src[i];
+          const start = i;
+
+          if (/[0-9.]/.test(char)) {
+            let number = '';
+            let dotCount = 0;
+            while (i < src.length && /[0-9.]/.test(src[i])) {
+              if (src[i] === '.') dotCount += 1;
+              if (dotCount > 1) throw new Error('Invalid expression');
+              number += src[i];
+              i += 1;
+            }
+            if (number === '.') throw new Error('Invalid expression');
+            tokens.push({ type: 'number', value: number, start, end: i });
+            continue;
+          }
+
+          if (/[a-zA-Z]/.test(char) || char === 'π') {
+            let id = '';
+            while (i < src.length && (/[a-zA-Z0-9]/.test(src[i]) || src[i] === 'π')) {
+              id += src[i];
+              i += 1;
+            }
+            tokens.push({ type: 'id', value: id, start, end: i });
+            continue;
+          }
+
+          if ('+-*/^×÷(),'.includes(char)) {
+            const normalized = char === '×' ? '*' : char === '÷' ? '/' : char;
+            tokens.push({ type: normalized, start, end: start + 1 });
+            i += 1;
+            continue;
+          }
+
+          throw new Error('Invalid expression');
+        }
+
+        return insertImplicitMultiplicationVisual(tokens);
+      }
+
+      function canEndVisual(token, nextToken) {
+        if (!token) return false;
+        if (token.type === 'number' || token.type === ')') return true;
+        if (token.type === 'id') {
+          if (functionNames.has(token.value) && nextToken && nextToken.type === '(') return false;
+          return true;
+        }
+        return false;
+      }
+
+      function canStartVisual(token) {
+        if (!token) return false;
+        return token.type === 'number' || token.type === '(' || token.type === 'id';
+      }
+
+      function insertImplicitMultiplicationVisual(tokens) {
+        const result = [];
+        for (let i = 0; i < tokens.length; i += 1) {
+          const current = tokens[i];
+          const next = tokens[i + 1];
+          result.push(current);
+          if (!next) continue;
+          const isFunctionCall = current.type === 'id' && functionNames.has(current.value) && next.type === '(';
+          const isCommaOrOperator = [',', '+', '-', '*', '/', '^'].includes(next.type);
+          if (canEndVisual(current, next) && canStartVisual(next) && !isFunctionCall && !isCommaOrOperator) {
+            result.push({ type: '*', implicit: true, start: current.end, end: current.end });
+          }
+        }
+        return result;
+      }
+
+      class VisualParser {
+        constructor(tokens) {
+          this.tokens = tokens;
+          this.index = 0;
+        }
+
+        peek() {
+          return this.tokens[this.index];
+        }
+
+        consume(type) {
+          const token = this.peek();
+          if (!token || token.type !== type) throw new Error('Invalid expression');
+          this.index += 1;
+          return token;
+        }
+
+        match(type) {
+          const token = this.peek();
+          if (token && token.type === type) {
+            this.index += 1;
+            return token;
+          }
+          return null;
+        }
+
+        parse() {
+          const ast = this.parseAddSub();
+          if (this.index < this.tokens.length) throw new Error('Invalid expression');
+          return ast;
+        }
+
+        parseAddSub() {
+          let node = this.parseMulDiv();
+          while (true) {
+            const op = this.match('+') || this.match('-');
+            if (!op) return node;
+            const right = this.parseMulDiv();
+            node = { type: 'binary', op: op.type, left: node, right, start: node.start, end: right.end, opStart: op.start, opEnd: op.end, implicit: !!op.implicit };
+          }
+        }
+
+        parseMulDiv() {
+          let node = this.parsePower();
+          while (true) {
+            const op = this.match('*') || this.match('/');
+            if (!op) return node;
+            const right = this.parsePower();
+            node = { type: 'binary', op: op.type, left: node, right, start: node.start, end: right.end, opStart: op.start, opEnd: op.end, implicit: !!op.implicit };
+          }
+        }
+
+        parsePower() {
+          let node = this.parseUnary();
+          const op = this.match('^');
+          if (op) {
+            const right = this.parsePower();
+            node = { type: 'binary', op: '^', left: node, right, start: node.start, end: right.end, opStart: op.start, opEnd: op.end, implicit: false };
+          }
+          return node;
+        }
+
+        parseUnary() {
+          const plus = this.match('+');
+          if (plus) return this.parseUnary();
+          const minus = this.match('-');
+          if (minus) {
+            const value = this.parseUnary();
+            return { type: 'unary', op: '-', value, start: minus.start, end: value.end, opStart: minus.start, opEnd: minus.end };
+          }
+          return this.parsePrimary();
+        }
+
+        parsePrimary() {
+          const token = this.peek();
+          if (!token) throw new Error('Invalid expression');
+
+          if (token.type === 'number') {
+            this.index += 1;
+            return { type: 'number', value: token.value, start: token.start, end: token.end };
+          }
+
+          if (token.type === '(') {
+            const open = this.consume('(');
+            const value = this.parseAddSub();
+            const close = this.consume(')');
+            return { type: 'group', value, start: open.start, end: close.end, openStart: open.start, openEnd: open.end, closeStart: close.start, closeEnd: close.end };
+          }
+
+          if (token.type === 'id') {
+            this.index += 1;
+            const name = token.value;
+            const open = this.match('(');
+            if (open) {
+              const args = [];
+              const commas = [];
+              let close = this.match(')');
+              if (!close) {
+                do {
+                  args.push(this.parseAddSub());
+                  const comma = this.match(',');
+                  if (!comma) break;
+                  commas.push(comma);
+                } while (true);
+                close = this.consume(')');
+              }
+              return {
+                type: 'function', name, args, commas,
+                start: token.start, end: close.end,
+                nameStart: token.start, nameEnd: token.end,
+                openStart: open.start, openEnd: open.end,
+                closeStart: close.start, closeEnd: close.end
+              };
+            }
+            return { type: 'id', value: name, start: token.start, end: token.end };
+          }
+
+          throw new Error('Invalid expression');
+        }
+      }
+
+      function getAstPrecedence(node) {
+        if (!node) return 99;
+        if (node.type === 'binary') {
+          if (node.op === '+' || node.op === '-') return 1;
+          if (node.op === '*' || node.op === '/') return 2;
+          if (node.op === '^') return 4;
+        }
+        if (node.type === 'unary') return 3;
+        return 5;
+      }
+
+      function renderAst(node, parentPrecedence = 0, side = '', ctx = null) {
+        if (!node) return '';
+        let html = '';
+        const precedence = getAstPrecedence(node);
+
+        if (node.type === 'number') html = renderTextWithCursor(node.value, node.start, ctx);
+        else if (node.type === 'id') html = renderIdentifier(node.value, node.start, node.end, ctx);
+        else if (node.type === 'group') html = renderGroupAst(node, ctx);
+        else if (node.type === 'unary') html = renderUnaryAst(node, precedence, ctx);
+        else if (node.type === 'function') html = renderFunctionAst(node, ctx);
+        else if (node.type === 'binary') html = renderBinaryAst(node, precedence, ctx);
+
+        const needsParens = precedence < parentPrecedence || (side === 'right' && parentPrecedence === precedence && node.type === 'binary' && (node.op === '-' || node.op === '/'));
+        return needsParens ? `<span class="group">(${html})</span>` : html;
+      }
+
+      function renderGroupAst(node, ctx) {
+        return `<span class="group">${cursorAt(node.openStart, ctx)}(${cursorAt(node.openEnd, ctx)}${renderAst(node.value, 0, '', ctx)}${cursorAt(node.closeStart, ctx)})${cursorAt(node.closeEnd, ctx)}</span>`;
+      }
+
+      function renderUnaryAst(node, precedence, ctx) {
+        return `${cursorAt(node.opStart, ctx)}<span class="op-symbol">−</span>${cursorAt(node.opEnd, ctx)}${renderAst(node.value, precedence, 'right', ctx)}`;
+      }
+
+      function renderIdentifier(value, start, end, ctx) {
+        const labels = {
+          pi: 'π',
+          hbar: 'ℏ',
+          eps0: 'ε<sub>0</sub>',
+          mu0: 'μ<sub>0</sub>',
+          kB: 'k<sub>B</sub>',
+          kb: 'k<sub>B</sub>',
+          NA: 'N<sub>A</sub>',
+          me: 'm<sub>e</sub>',
+          mp: 'm<sub>p</sub>'
+        };
+
+        if (ctx && ctx.cursor > start && ctx.cursor < end) {
+          return renderTextWithCursor(value, start, ctx);
+        }
+
+        const label = Object.prototype.hasOwnProperty.call(labels, value) ? labels[value] : escapeHtml(value);
+        return `${cursorAt(start, ctx)}${label}${cursorAt(end, ctx)}`;
+      }
+
+      function renderOperator(symbol, start, end, ctx) {
+        if (start === end) return `${cursorAt(start, ctx)}<span class="op-symbol">${symbol}</span>`;
+        return `<span class="op-symbol">${cursorAt(start, ctx)}${symbol}${cursorAt(end, ctx)}</span>`;
+      }
+
+      function renderBinaryAst(node, precedence, ctx) {
+        if (node.op === '/') {
+          return `${cursorAt(node.opStart, ctx)}<span class="frac"><span class="frac-num">${renderAst(node.left, 0, '', ctx)}</span><span class="frac-den">${renderAst(node.right, 0, '', ctx)}</span></span>${cursorAt(node.opEnd, ctx)}`;
+        }
+        if (node.op === '^') {
+          const base = renderAst(node.left, precedence, 'left', ctx);
+          const exponent = renderAst(node.right, 0, '', ctx);
+          return `${base}${cursorAt(node.opStart, ctx)}<sup>${cursorAt(node.opEnd, ctx)}${exponent}</sup>`;
+        }
+        const symbol = node.op === '*' ? '×' : node.op === '-' ? '−' : node.op;
+        return `${renderAst(node.left, precedence, 'left', ctx)}${renderOperator(symbol, node.opStart, node.opEnd, ctx)}${renderAst(node.right, precedence, 'right', ctx)}`;
+      }
+
+      function renderFunctionName(node, displayName, ctx) {
+        let before = cursorAt(node.nameStart, ctx);
+        if (ctx && !ctx.placed && ctx.cursor > node.nameStart && ctx.cursor < node.nameEnd) {
+          ctx.placed = true;
+          before += cursorHtml();
+        }
+        return `${before}<span class="func-name">${displayName}</span>`;
+      }
+
+      function renderFunctionAst(node, ctx) {
+        const name = node.name;
+        if (name === 'sqrt' && node.args.length === 1) {
+          let before = cursorAt(node.nameStart, ctx);
+          if (ctx && !ctx.placed && ctx.cursor > node.nameStart && ctx.cursor < node.nameEnd) {
+            ctx.placed = true;
+            before += cursorHtml();
+          }
+          return `${before}<span class="sqrt"><span class="sqrt-symbol">√</span>${cursorAt(node.openStart, ctx)}${cursorAt(node.openEnd, ctx)}<span class="radicand">${renderAst(node.args[0], 0, '', ctx)}</span>${cursorAt(node.closeStart, ctx)}${cursorAt(node.closeEnd, ctx)}</span>`;
+        }
+        if (name === 'inv' && node.args.length === 1) {
+          let before = cursorAt(node.nameStart, ctx);
+          if (ctx && !ctx.placed && ctx.cursor > node.nameStart && ctx.cursor < node.nameEnd) {
+            ctx.placed = true;
+            before += cursorHtml();
+          }
+          return `${before}${cursorAt(node.openStart, ctx)}${cursorAt(node.openEnd, ctx)}<span class="frac"><span class="frac-num">1</span><span class="frac-den">${renderAst(node.args[0], 0, '', ctx)}</span></span>${cursorAt(node.closeStart, ctx)}${cursorAt(node.closeEnd, ctx)}`;
+        }
+        if (name === 'log' && node.args.length === 2) {
+          const base = renderAst(node.args[0], 0, '', ctx);
+          const value = renderAst(node.args[1], 0, '', ctx);
+          return `${renderFunctionName(node, 'log', ctx)}${cursorAt(node.openStart, ctx)}${cursorAt(node.openEnd, ctx)}<sub>${base}</sub>${node.commas[0] ? cursorAt(node.commas[0].start, ctx) + cursorAt(node.commas[0].end, ctx) : ''}<span class="group">(${value})</span>${cursorAt(node.closeStart, ctx)}${cursorAt(node.closeEnd, ctx)}`;
+        }
+
+        const displayName = name === 'ln' ? 'ln' : escapeHtml(name);
+        let html = `${renderFunctionName(node, displayName, ctx)}${cursorAt(node.openStart, ctx)}(${cursorAt(node.openEnd, ctx)}`;
+        node.args.forEach((arg, index) => {
+          html += renderAst(arg, 0, '', ctx);
+          const comma = node.commas[index];
+          if (comma) html += `<span class="op-symbol">${cursorAt(comma.start, ctx)},${cursorAt(comma.end, ctx)}</span>`;
+        });
+        html += `${cursorAt(node.closeStart, ctx)})${cursorAt(node.closeEnd, ctx)}`;
+        return html;
+      }
+
+      function updateDisplay() {
+        clampCursor();
+        expressionEl.innerHTML = renderExpression(state.expression, state.expression ? state.cursor : -1);
+        expressionEl.setAttribute('aria-label', state.expression || '0');
+        angleLabel.textContent = state.angleMode;
+        memoryLabel.textContent = `M: ${formatNumber(state.memory)}`;
+      }
+
+      function setResult(value, isError = false) {
+        resultEl.textContent = value;
+        resultEl.classList.toggle('error', isError);
+      }
+
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add('show');
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(() => toastEl.classList.remove('show'), 1500);
+      }
+
+      function clampCursor() {
+        state.cursor = Math.max(0, Math.min(state.cursor, state.expression.length));
+      }
+
+      function beginNewInputIfNeeded() {
+        if (state.justCalculated) {
+          state.expression = '';
+          state.cursor = 0;
+          state.justCalculated = false;
+        }
+      }
+
+      function insert(value) {
+        beginNewInputIfNeeded();
+        clampCursor();
+        state.expression = state.expression.slice(0, state.cursor) + value + state.expression.slice(state.cursor);
+        state.cursor += value.length;
+        setResult(state.expression ? '' : '0');
+        updateDisplay();
+      }
+
+      function replaceExpression(value, resultText = '') {
+        state.expression = value;
+        state.cursor = value.length;
+        state.justCalculated = false;
+        setResult(resultText);
+        updateDisplay();
+      }
+
+      function clearAll() {
+        state.expression = '';
+        state.cursor = 0;
+        state.justCalculated = false;
+        setResult('0');
+        updateDisplay();
+      }
+
+      function deleteLast() {
+        if (state.justCalculated) return clearAll();
+        clampCursor();
+        if (state.cursor > 0) {
+          state.expression = state.expression.slice(0, state.cursor - 1) + state.expression.slice(state.cursor);
+          state.cursor -= 1;
+        }
+        setResult(state.expression ? '' : '0');
+        updateDisplay();
+      }
+
+      function deleteForward() {
+        if (state.justCalculated) return clearAll();
+        clampCursor();
+        if (state.cursor < state.expression.length) {
+          state.expression = state.expression.slice(0, state.cursor) + state.expression.slice(state.cursor + 1);
+        }
+        setResult(state.expression ? '' : '0');
+        updateDisplay();
+      }
+
+      function moveCursor(delta) {
+        state.cursor += delta;
+        clampCursor();
+        updateDisplay();
+      }
+
+      function moveCursorToStart() {
+        state.cursor = 0;
+        updateDisplay();
+      }
+
+      function moveCursorToEnd() {
+        state.cursor = state.expression.length;
+        updateDisplay();
+      }
+
+      function toggleAngle() {
+        state.angleMode = state.angleMode === 'DEG' ? 'RAD' : 'DEG';
+        updateDisplay();
+        showToast(`${state.angleMode}に切り替えました`);
+      }
+
+      function formatNumber(value) {
+        if (!Number.isFinite(value)) return 'Error';
+        if (Object.is(value, -0)) value = 0;
+        if (value === 0) return '0';
+
+        // 結果は有効数字3桁で表示し、4桁目を四捨五入する。
+        // 例: 2 -> 2.00, 0.5 -> 0.500, 12.345 -> 12.3, 1234 -> 1.23e+3
+        const abs = Math.abs(value);
+        if (abs >= 1e6 || abs < 1e-4) {
+          return value.toExponential(2);
+        }
+        return value.toPrecision(3);
+      }
+
+      function addHistory(expression, result) {
+        state.history.unshift({ expression, result });
+        state.history = state.history.slice(0, 20);
+        renderHistory();
+      }
+
+      function renderHistory() {
+        historyEl.innerHTML = '';
+        if (state.history.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = 'まだ履歴はありません。計算するとここに表示されます。';
+          historyEl.appendChild(empty);
+          return;
+        }
+
+        for (const item of state.history) {
+          const div = document.createElement('div');
+          div.className = 'history-item';
+          div.innerHTML = `
+            <div class="history-expression"></div>
+            <div class="history-result"></div>
+          `;
+          div.querySelector('.history-expression').textContent = item.expression;
+          div.querySelector('.history-result').textContent = `= ${item.result}`;
+          div.addEventListener('click', () => {
+            replaceExpression(item.expression, item.result);
+            showToast('履歴の式を呼び出しました');
+          });
+          historyEl.appendChild(div);
+        }
+      }
+
+      function tokenize(input) {
+        const tokens = [];
+        let i = 0;
+        const src = input.replace(/\s+/g, '');
+
+        while (i < src.length) {
+          const char = src[i];
+
+          if (/[0-9.]/.test(char)) {
+            let number = '';
+            let dotCount = 0;
+            while (i < src.length && /[0-9.]/.test(src[i])) {
+              if (src[i] === '.') dotCount += 1;
+              if (dotCount > 1) throw new Error('Invalid expression');
+              number += src[i];
+              i += 1;
+            }
+            if (number === '.') throw new Error('Invalid expression');
+            tokens.push({ type: 'number', value: Number(number) });
+            continue;
+          }
+
+          if (/[a-zA-Z]/.test(char) || char === 'π') {
+            let id = '';
+            while (i < src.length && (/[a-zA-Z0-9]/.test(src[i]) || src[i] === 'π')) {
+              id += src[i];
+              i += 1;
+            }
+            tokens.push({ type: 'id', value: id });
+            continue;
+          }
+
+          if ('+-*/^×÷(),'.includes(char)) {
+            const normalized = char === '×' ? '*' : char === '÷' ? '/' : char;
+            tokens.push({ type: normalized });
+            i += 1;
+            continue;
+          }
+
+          throw new Error('Invalid expression');
+        }
+
+        return insertImplicitMultiplication(tokens);
+      }
+
+      function canEndExpression(token, nextToken) {
+        if (!token) return false;
+        if (token.type === 'number' || token.type === ')') return true;
+        if (token.type === 'id') {
+          if (functionNames.has(token.value) && nextToken && nextToken.type === '(') return false;
+          return constantNames.has(token.value) || !functionNames.has(token.value);
+        }
+        return false;
+      }
+
+      function canStartExpression(token) {
+        if (!token) return false;
+        if (token.type === 'number' || token.type === '(') return true;
+        if (token.type === 'id') return true;
+        return false;
+      }
+
+      function insertImplicitMultiplication(tokens) {
+        const result = [];
+        for (let i = 0; i < tokens.length; i += 1) {
+          const current = tokens[i];
+          const next = tokens[i + 1];
+          result.push(current);
+
+          if (!next) continue;
+          const currentCanEnd = canEndExpression(current, next);
+          const nextCanStart = canStartExpression(next);
+          const isFunctionCall = current.type === 'id' && functionNames.has(current.value) && next.type === '(';
+          const isBetweenFunctionAndParen = isFunctionCall;
+          const isCommaOrOperator = [',', '+', '-', '*', '/', '^'].includes(next.type);
+
+          if (currentCanEnd && nextCanStart && !isBetweenFunctionAndParen && !isCommaOrOperator) {
+            result.push({ type: '*' });
+          }
+        }
+        return result;
+      }
+
+      class Parser {
+        constructor(tokens) {
+          this.tokens = tokens;
+          this.index = 0;
+        }
+
+        peek() {
+          return this.tokens[this.index];
+        }
+
+        consume(type) {
+          const token = this.peek();
+          if (!token || token.type !== type) {
+            throw new Error('Invalid expression');
+          }
+          this.index += 1;
+          return token;
+        }
+
+        match(type) {
+          const token = this.peek();
+          if (token && token.type === type) {
+            this.index += 1;
+            return true;
+          }
+          return false;
+        }
+
+        parse() {
+          const value = this.parseAddSub();
+          if (this.index < this.tokens.length) throw new Error('Invalid expression');
+          if (!Number.isFinite(value)) throw new Error('Invalid function input');
+          return value;
+        }
+
+        parseAddSub() {
+          let value = this.parseMulDiv();
+          while (true) {
+            if (this.match('+')) {
+              value += this.parseMulDiv();
+            } else if (this.match('-')) {
+              value -= this.parseMulDiv();
+            } else {
+              return value;
+            }
+          }
+        }
+
+        parseMulDiv() {
+          let value = this.parsePower();
+          while (true) {
+            if (this.match('*')) {
+              value *= this.parsePower();
+            } else if (this.match('/')) {
+              const divisor = this.parsePower();
+              if (divisor === 0) throw new Error('Cannot divide by zero');
+              value /= divisor;
+            } else {
+              return value;
+            }
+          }
+        }
+
+        parsePower() {
+          let value = this.parseUnary();
+          if (this.match('^')) {
+            const exponent = this.parsePower();
+            value = Math.pow(value, exponent);
+          }
+          return value;
+        }
+
+        parseUnary() {
+          if (this.match('+')) return this.parseUnary();
+          if (this.match('-')) return -this.parseUnary();
+          return this.parsePrimary();
+        }
+
+        parsePrimary() {
+          const token = this.peek();
+          if (!token) throw new Error('Invalid expression');
+
+          if (token.type === 'number') {
+            this.index += 1;
+            return token.value;
+          }
+
+          if (token.type === '(') {
+            this.index += 1;
+            const value = this.parseAddSub();
+            this.consume(')');
+            return value;
+          }
+
+          if (token.type === 'id') {
+            this.index += 1;
+            const name = token.value;
+
+            if (this.match('(')) {
+              const args = [];
+              if (!this.match(')')) {
+                do {
+                  args.push(this.parseAddSub());
+                } while (this.match(','));
+                this.consume(')');
+              }
+              return applyFunction(name, args);
+            }
+
+            return getConstant(name);
+          }
+
+          throw new Error('Invalid expression');
+        }
+      }
+
+      function getConstant(name) {
+        if (name === 'π' || name.toLowerCase() === 'pi') return Math.PI;
+        if (name === 'e') return Math.E;
+        if (name === 'Ans') return state.ans;
+        if (name === 'M') return state.memory;
+        if (Object.prototype.hasOwnProperty.call(physicalConstants, name)) return physicalConstants[name];
+        throw new Error('Invalid expression');
+      }
+
+      function toRadians(value) {
+        return state.angleMode === 'DEG' ? value * Math.PI / 180 : value;
+      }
+
+      function requireArgs(name, args, count) {
+        if (args.length !== count) throw new Error('Invalid function input');
+      }
+
+      function applyFunction(name, args) {
+        switch (name) {
+          case 'sin':
+            requireArgs(name, args, 1);
+            return Math.sin(toRadians(args[0]));
+          case 'cos':
+            requireArgs(name, args, 1);
+            return Math.cos(toRadians(args[0]));
+          case 'tan':
+            requireArgs(name, args, 1);
+            return Math.tan(toRadians(args[0]));
+          case 'log':
+            if (args.length === 1) {
+              if (args[0] <= 0) throw new Error('Invalid function input');
+              return Math.log10(args[0]);
+            }
+            if (args.length === 2) {
+              const base = args[0];
+              const value = args[1];
+              if (base <= 0 || base === 1 || value <= 0) throw new Error('Invalid function input');
+              return Math.log(value) / Math.log(base);
+            }
+            throw new Error('Invalid function input');
+          case 'ln':
+            requireArgs(name, args, 1);
+            if (args[0] <= 0) throw new Error('Invalid function input');
+            return Math.log(args[0]);
+          case 'sqrt':
+            requireArgs(name, args, 1);
+            if (args[0] < 0) throw new Error('Invalid function input');
+            return Math.sqrt(args[0]);
+          case 'inv':
+            requireArgs(name, args, 1);
+            if (args[0] === 0) throw new Error('Cannot divide by zero');
+            return 1 / args[0];
+          case 'abs':
+            requireArgs(name, args, 1);
+            return Math.abs(args[0]);
+          case 'exp':
+            requireArgs(name, args, 1);
+            return Math.exp(args[0]);
+          default:
+            throw new Error('Invalid function input');
+        }
+      }
+
+      function evaluateExpression(expression) {
+        if (!expression.trim()) throw new Error('Invalid expression');
+        const tokens = tokenize(expression);
+        const parser = new Parser(tokens);
+        return parser.parse();
+      }
+
+      function calculate() {
+        try {
+          const original = state.expression;
+          const value = evaluateExpression(original);
+          const formatted = formatNumber(value);
+          state.ans = value;
+          state.cursor = state.expression.length;
+          state.justCalculated = true;
+          setResult(formatted);
+          addHistory(original, formatted);
+          updateDisplay();
+        } catch (error) {
+          state.justCalculated = false;
+          const message = error.message || 'Error';
+          if (message === 'Cannot divide by zero') {
+            setResult('Cannot divide by zero', true);
+          } else if (message === 'Invalid function input') {
+            setResult('Invalid function input', true);
+          } else {
+            setResult('Invalid expression', true);
+          }
+        }
+      }
+
+      function memoryAdd() {
+        try {
+          const value = state.expression ? evaluateExpression(state.expression) : state.ans;
+          state.memory += value;
+          updateDisplay();
+          showToast('メモリに加算しました');
+        } catch {
+          setResult('Invalid expression', true);
+        }
+      }
+
+      function memorySubtract() {
+        try {
+          const value = state.expression ? evaluateExpression(state.expression) : state.ans;
+          state.memory -= value;
+          updateDisplay();
+          showToast('メモリから減算しました');
+        } catch {
+          setResult('Invalid expression', true);
+        }
+      }
+
+      function copyResult() {
+        const text = resultEl.textContent || '';
+        if (!text || text === '0') return;
+        navigator.clipboard?.writeText(text).then(() => {
+          showToast('結果をコピーしました');
+        }).catch(() => {
+          showToast('コピーできませんでした');
+        });
+      }
+
+      function handleAction(action) {
+        switch (action) {
+          case 'clear':
+            clearAll();
+            break;
+          case 'delete':
+            deleteLast();
+            break;
+          case 'toggleAngle':
+            toggleAngle();
+            break;
+          case 'calculate':
+            calculate();
+            break;
+          case 'square':
+            insert('^2');
+            break;
+          case 'logbase':
+            insert('log(');
+            showToast('log(底,値) の形で入力します。例: log(2,8)');
+            break;
+          case 'memoryClear':
+            state.memory = 0;
+            updateDisplay();
+            showToast('メモリをクリアしました');
+            break;
+          case 'memoryRecall':
+            insert('M');
+            break;
+          case 'memoryAdd':
+            memoryAdd();
+            break;
+          case 'memorySubtract':
+            memorySubtract();
+            break;
+          default:
+            break;
+        }
+      }
+
+      buttonsEl.addEventListener('click', (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        if (button.dataset.value) insert(button.dataset.value);
+        if (button.dataset.action) handleAction(button.dataset.action);
+      });
+
+      document.querySelectorAll('[data-constant]').forEach((button) => {
+        button.addEventListener('click', () => {
+          insert(button.dataset.constant);
+        });
+      });
+
+      document.querySelectorAll('[data-side-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.sideAction;
+          if (action === 'copy') copyResult();
+          if (action === 'theme') {
+            document.body.classList.toggle('light');
+            showToast(document.body.classList.contains('light') ? 'ライトテーマにしました' : 'ダークテーマにしました');
+          }
+          if (action === 'clearHistory') {
+            state.history = [];
+            renderHistory();
+            showToast('履歴を削除しました');
+          }
+          if (action === 'insertExample') {
+            replaceExpression('log(2,8)+sin(30)+sqrt(16)', '');
+          }
+        });
+      });
+
+      document.querySelectorAll('[data-cursor-action]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.cursorAction;
+          if (action === 'left') moveCursor(-1);
+          if (action === 'right') moveCursor(1);
+          if (action === 'start') moveCursorToStart();
+          if (action === 'end') moveCursorToEnd();
+        });
+      });
+
+      document.addEventListener('keydown', (event) => {
+        const key = event.key;
+        if (/^[0-9]$/.test(key)) return insert(key);
+        if (key === '.') return insert('.');
+        if (key === '+') return insert('+');
+        if (key === '-') return insert('-');
+        if (key === '*') return insert('×');
+        if (key === '/') {
+          event.preventDefault();
+          return insert('÷');
+        }
+        if (key === '^') return insert('^');
+        if (key === '(' || key === ')') return insert(key);
+        if (key === ',') return insert(',');
+        if (key === 'ArrowLeft') {
+          event.preventDefault();
+          return moveCursor(-1);
+        }
+        if (key === 'ArrowRight') {
+          event.preventDefault();
+          return moveCursor(1);
+        }
+        if (key === 'Home') {
+          event.preventDefault();
+          return moveCursorToStart();
+        }
+        if (key === 'End') {
+          event.preventDefault();
+          return moveCursorToEnd();
+        }
+        if (key === 'Enter' || key === '=') {
+          event.preventDefault();
+          return calculate();
+        }
+        if (key === 'Backspace') {
+          event.preventDefault();
+          return deleteLast();
+        }
+        if (key === 'Delete') {
+          event.preventDefault();
+          return deleteForward();
+        }
+        if (key === 'Escape') return clearAll();
+      });
+
+      updateDisplay();
+      renderHistory();
+    })();
+  </script>
+</body>
+</html>
